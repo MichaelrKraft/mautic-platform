@@ -1,0 +1,339 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                String             @id @default(cuid())
+  email             String             @unique
+  password          String
+  name              String?
+  avatar            String?
+  bio               String?
+  role              String             @default("user")
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  comments          Comment[]
+  memberships       CommunityMember[]
+  courseEnrollments CourseEnrollment[]
+  instructorCourses Course[]           @relation("CourseInstructor")
+  eventAttendances  EventAttendee[]
+  hostedEvents      Event[]            @relation("EventHost")
+  lessonProgress    LessonProgress[]
+  notifications     Notification[]
+  pointTransactions PointTransaction[]
+  posts             Post[]
+  reactions         Reaction[]
+  achievements      UserAchievement[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model Community {
+  id           String            @id @default(cuid())
+  tenantId     String?
+  name         String
+  slug         String            @unique
+  description  String?
+  settings     Json?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  achievements Achievement[]
+  members      CommunityMember[]
+  courses      Course[]
+  events       Event[]
+  posts        Post[]
+
+  @@index([slug])
+  @@index([tenantId])
+  @@map("communities")
+}
+
+model CommunityMember {
+  id          String    @id @default(cuid())
+  communityId String
+  userId      String
+  role        String    @default("member")
+  points      Int       @default(0)
+  level       Int       @default(1)
+  joinedAt    DateTime  @default(now())
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([communityId, userId])
+  @@index([communityId])
+  @@index([userId])
+  @@index([points])
+  @@map("community_members")
+}
+
+model Post {
+  id          String    @id @default(cuid())
+  communityId String
+  authorId    String
+  title       String
+  content     String
+  type        String    @default("discussion")
+  isPinned    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  comments    Comment[]
+  tags        PostTag[]
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@index([communityId])
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([isPinned])
+  @@map("posts")
+}
+
+model Comment {
+  id              String    @id @default(cuid())
+  postId          String
+  authorId        String
+  parentCommentId String?
+  content         String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  author          User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parentComment   Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  replies         Comment[] @relation("CommentReplies")
+  post            Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([authorId])
+  @@index([parentCommentId])
+  @@index([createdAt])
+  @@map("comments")
+}
+
+model Reaction {
+  id            String   @id @default(cuid())
+  reactableType String
+  reactableId   String
+  userId        String
+  reactionType  String
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reactableType, reactableId, userId, reactionType])
+  @@index([reactableType, reactableId])
+  @@index([userId])
+  @@map("reactions")
+}
+
+model PostTag {
+  id     String @id @default(cuid())
+  postId String
+  name   String
+  color  String @default("#3b82f6")
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([name])
+  @@map("post_tags")
+}
+
+model Course {
+  id           String             @id @default(cuid())
+  communityId  String
+  title        String
+  description  String?
+  instructorId String
+  level        String             @default("beginner")
+  price        Float              @default(0)
+  isFree       Boolean            @default(true)
+  isPublished  Boolean            @default(false)
+  coverImage   String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  enrollments  CourseEnrollment[]
+  modules      CourseModule[]
+  community    Community          @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  instructor   User               @relation("CourseInstructor", fields: [instructorId], references: [id], onDelete: Cascade)
+
+  @@index([communityId])
+  @@index([instructorId])
+  @@index([isPublished])
+  @@map("courses")
+}
+
+model CourseModule {
+  id          String         @id @default(cuid())
+  courseId    String
+  title       String
+  description String?
+  order       Int
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  lessons     CourseLesson[]
+  course      Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([order])
+  @@map("course_modules")
+}
+
+model CourseLesson {
+  id            String           @id @default(cuid())
+  moduleId      String
+  title         String
+  content       String?
+  videoUrl      String?
+  videoDuration Int?
+  order         Int
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  module        CourseModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress      LessonProgress[]
+
+  @@index([moduleId])
+  @@index([order])
+  @@map("course_lessons")
+}
+
+model CourseEnrollment {
+  id              String           @id @default(cuid())
+  courseId        String
+  userId          String
+  progressPercent Int              @default(0)
+  isCompleted     Boolean          @default(false)
+  enrolledAt      DateTime         @default(now())
+  completedAt     DateTime?
+  course          Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonProgress  LessonProgress[]
+
+  @@unique([courseId, userId])
+  @@index([courseId])
+  @@index([userId])
+  @@index([isCompleted])
+  @@map("course_enrollments")
+}
+
+model LessonProgress {
+  id             String           @id @default(cuid())
+  enrollmentId   String
+  lessonId       String
+  userId         String
+  isCompleted    Boolean          @default(false)
+  watchedSeconds Int              @default(0)
+  completedAt    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  enrollment     CourseEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lesson         CourseLesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, lessonId])
+  @@index([enrollmentId])
+  @@index([lessonId])
+  @@index([userId])
+  @@map("lesson_progress")
+}
+
+model Event {
+  id           String          @id @default(cuid())
+  communityId  String
+  hostId       String
+  title        String
+  description  String?
+  type         String          @default("webinar")
+  startTime    DateTime
+  endTime      DateTime?
+  meetingUrl   String?
+  maxAttendees Int?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  attendees    EventAttendee[]
+  community    Community       @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  host         User            @relation("EventHost", fields: [hostId], references: [id], onDelete: Cascade)
+
+  @@index([communityId])
+  @@index([hostId])
+  @@index([startTime])
+  @@map("events")
+}
+
+model EventAttendee {
+  id           String    @id @default(cuid())
+  eventId      String
+  userId       String
+  status       String    @default("registered")
+  registeredAt DateTime  @default(now())
+  attendedAt   DateTime?
+  event        Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+  @@map("event_attendees")
+}
+
+model Achievement {
+  id               String            @id @default(cuid())
+  communityId      String
+  name             String
+  description      String?
+  criteria         Json
+  pointsValue      Int               @default(0)
+  icon             String?
+  createdAt        DateTime          @default(now())
+  community        Community         @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  userAchievements UserAchievement[]
+
+  @@index([communityId])
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  achievementId String
+  userId        String
+  earnedAt      DateTime    @default(now())
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([achievementId, userId])
+  @@index([achievementId])
+  @@index([userId])
+  @@map("user_achievements")
+}
+
+model PointTransaction {
+  id         String   @id @default(cuid())
+  userId     String
+  points     Int
+  reason     String
+  sourceType String
+  sourceId   String?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("point_transactions")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  message   String
+  actionUrl String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}

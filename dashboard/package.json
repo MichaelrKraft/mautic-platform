@@ -1,0 +1,47 @@
+{
+  "name": "dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3005",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:seed": "tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@fullcalendar/daygrid": "^6.1.19",
+    "@fullcalendar/interaction": "^6.1.19",
+    "@fullcalendar/react": "^6.1.19",
+    "@fullcalendar/timegrid": "^6.1.19",
+    "@prisma/adapter-pg": "^7.1.0",
+    "@prisma/client": "^7.1.0",
+    "@prisma/extension-accelerate": "^3.0.1",
+    "@tiptap/pm": "^3.13.0",
+    "@tiptap/react": "^3.13.0",
+    "@tiptap/starter-kit": "^3.13.0",
+    "@types/video.js": "^7.3.58",
+    "@videojs/themes": "^1.0.1",
+    "next": "14.2.33",
+    "pg": "^8.16.3",
+    "prisma": "^7.1.0",
+    "react": "^18",
+    "react-dom": "^18",
+    "video.js": "^8.23.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/pg": "^8.16.0",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.33",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5"
+  }
+}

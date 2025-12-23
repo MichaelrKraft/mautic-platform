@@ -28,6 +28,7 @@ model User {
   posts             Post[]
   reactions         Reaction[]
   achievements      UserAchievement[]
+  voiceAgents       VoiceAgent[]
 
   @@index([email])
   @@map("users")
@@ -135,6 +136,7 @@ model PostTag {
   color  String @default("#3b82f6")
   post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
 
+  @@unique([postId, name])
   @@index([postId])
   @@index([name])
   @@map("post_tags")
@@ -336,4 +338,65 @@ model Notification {
   @@index([isRead])
   @@index([createdAt])
   @@map("notifications")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Voice AI Models (LiveKit Integration)
+// ═══════════════════════════════════════════════════════════════════════════
+
+model VoiceAgent {
+  id           String      @id @default(cuid())
+  name         String
+  type         String      // "lead_qualification", "appointment_booking", "customer_support"
+  status       String      @default("inactive") // "active", "inactive", "testing"
+  systemPrompt String      @db.Text
+  voiceId      String?     // TTS voice identifier
+  phoneNumber  String?     // Associated phone number
+  config       Json?       // LiveKit agent configuration
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  calls        VoiceCall[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("voice_agents")
+}
+
+model VoiceCall {
+  id          String           @id @default(cuid())
+  roomId      String           @unique // LiveKit room ID
+  direction   String           // "inbound", "outbound"
+  status      String           // "in_progress", "completed", "failed", "no_answer"
+  phoneNumber String
+  duration    Int?             // Duration in seconds
+  outcome     String?          // "qualified", "appointment_booked", "callback_requested", "not_interested"
+  summary     String?          @db.Text
+  startedAt   DateTime
+  endedAt     DateTime?
+  agentId     String
+  agent       VoiceAgent       @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  contactId   String?          // Mautic contact ID if synced
+  transcript  VoiceTranscript?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([agentId])
+  @@index([status])
+  @@index([startedAt])
+  @@index([phoneNumber])
+  @@map("voice_calls")
+}
+
+model VoiceTranscript {
+  id        String    @id @default(cuid())
+  callId    String    @unique
+  call      VoiceCall @relation(fields: [callId], references: [id], onDelete: Cascade)
+  content   Json      // Array of { role: "agent"|"user", text: string, timestamp: number }
+  fullText  String    @db.Text
+  createdAt DateTime  @default(now())
+
+  @@index([callId])
+  @@map("voice_transcripts")
 }

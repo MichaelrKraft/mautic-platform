@@ -143,7 +143,7 @@ export async function deleteRoom(name: string): Promise<void> {
 /**
  * Verify and parse a webhook from LiveKit
  */
-export async function verifyWebhook(body: string, authorization: string | null) {
+export async function verifyWebhook(body: string, authorization: string | undefined) {
   const receiver = getWebhookReceiver();
   return receiver.receive(body, authorization);
 }

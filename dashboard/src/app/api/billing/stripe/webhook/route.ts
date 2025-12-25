@@ -4,8 +4,8 @@ import Stripe from 'stripe';
 import { checkBalanceAndReactivateIfNeeded } from '@/lib/billing/balance-check';
 
 // Initialize Stripe - will be undefined if no key configured
-const stripe = process.env.STRIPE_SECRET_KEY 
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' })
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-12-15.clover' })
   : null;
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;

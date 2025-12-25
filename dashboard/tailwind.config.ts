@@ -46,6 +46,18 @@ const config: Config = {
         'warning': '#f7941d',
         'error': '#d32f2f',
         'info': '#1a8cff',
+
+        // Monday.com-inspired status colors
+        'status': {
+          'done': '#00C875',       // Green - Completed
+          'working': '#FDAB3D',    // Orange - In Progress
+          'stuck': '#E2445C',      // Red - Blocked/Stuck
+          'pending': '#C4C4C4',    // Gray - Not Started
+          'review': '#579BFC',     // Blue - In Review
+          'planning': '#A25DDC',   // Purple - Planning
+          'hot': '#FF5AC4',        // Pink - Hot Lead
+          'cold': '#66CCFF',       // Light Blue - Cold Lead
+        },
       },
       fontFamily: {
         sans: ['Open Sans', 'Inter', 'system-ui', 'sans-serif'],

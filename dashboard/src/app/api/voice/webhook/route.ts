@@ -1,13 +1,16 @@
 /**
  * LiveKit Webhook Handler
- * 
+ *
  * POST /api/voice/webhook - Receive and process LiveKit room events
- * 
+ *
  * Events handled:
  * - room_started: Create call record
  * - room_finished: Update call status and duration
  * - participant_joined: Log for analytics
  * - track_published: Handle audio tracks
+ *
+ * Authorization parameter properly handles null-to-undefined conversion
+ * for LiveKit SDK compatibility (Web API returns null, SDK expects undefined)
  */
 
 import { NextRequest, NextResponse } from 'next/server';

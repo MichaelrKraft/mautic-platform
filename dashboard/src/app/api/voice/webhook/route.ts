@@ -18,7 +18,7 @@ import { checkBalanceAndPauseIfNeeded } from '@/lib/billing/balance-check';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
-    const authorization = request.headers.get('authorization');
+    const authorization = request.headers.get('authorization') ?? undefined;
 
     // Verify webhook signature
     let event;

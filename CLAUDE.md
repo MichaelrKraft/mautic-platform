@@ -250,9 +250,94 @@ tar -xzf mautic-clientname.tar.gz -C /
 - SSL certificates via Let's Encrypt (auto-renewal via certbot)
 - Dashboard uses bcrypt for password hashing
 
+## Voice AI Feature
+
+### Overview
+AI-powered voice agents using LiveKit for real-time voice processing. Agents can qualify leads, book appointments, and sync to Mautic CRM.
+
+### Architecture
+```
+Caller → Twilio Phone → SIP Trunk → LiveKit Cloud → Python Agent Worker
+                                         ↓
+                              STT (Deepgram) → LLM (GPT-4) → TTS (ElevenLabs)
+                                         ↓
+                              Next.js API ← Webhooks → PostgreSQL
+```
+
+### Key Components
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| Python Agent | `/voice-agent/src/agent.py` | Voice pipeline (STT→LLM→TTS) |
+| LiveKit Client | `/dashboard/src/lib/livekit-client.ts` | Room/token management |
+| Voice APIs | `/dashboard/src/app/api/voice/` | CRUD for agents, calls |
+| Webhook Handler | `/dashboard/src/app/api/voice/webhook/` | LiveKit events → billing |
+
+### Built-in Agent Actions
+- `book_appointment` - Google Calendar integration
+- `save_contact` - Sync to Mautic CRM
+- `send_text_message` - Twilio SMS
+- `qualify_lead` - Lead scoring with Mautic tags
+
+### Voice Pipeline (agent.py)
+- **STT**: Deepgram nova-2
+- **LLM**: GPT-4
+- **TTS**: ElevenLabs (8 voices: rachel, sarah, charlotte, matilda, josh, adam, antoni, brian)
+- **VAD**: Silero
+
+### Running the Agent
+```bash
+cd /voice-agent
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python src/agent.py dev  # Development mode
+```
+
+### Environment Variables (voice-agent/.env)
+```bash
+LIVEKIT_URL=wss://your-project.livekit.cloud
+LIVEKIT_API_KEY=APIxxxxxxxx
+LIVEKIT_API_SECRET=xxxxxxxx
+OPENAI_API_KEY=sk-xxxxxxxx
+DEEPGRAM_API_KEY=xxxxxxxx
+ELEVENLABS_API_KEY=xxxxxxxx
+DASHBOARD_URL=http://localhost:3005
+TWILIO_ACCOUNT_SID=ACxxxxxxxx
+TWILIO_AUTH_TOKEN=xxxxxxxx
+TWILIO_PHONE_NUMBER=+1xxxxxxxxx
+```
+
+---
+
+## Billing System
+
+### Overview
+Prepaid wallet-based billing for Voice AI usage at $0.10/minute.
+
+### Models (Prisma)
+- `Wallet` - User balance, low balance alerts, auto-topup
+- `VoiceUsage` - Per-call usage records (minutes, cost, margin)
+- `BillingTransaction` - Ledger of wallet changes
+
+### Pricing
+- **User Rate**: $0.10/minute
+- **Platform Cost**: ~$0.04/minute (LiveKit + AI)
+- **Margin**: ~$0.06/minute (60%)
+
+### Key APIs
+- `GET /api/billing/wallet` - Get/create wallet
+- `POST /api/billing/wallet` - Add credits (dev mode)
+- `POST /api/billing/usage` - Record usage, deduct balance
+- `POST /api/billing/stripe/checkout` - Stripe payment
+
+### Auto-pause on Zero Balance
+When wallet reaches $0, active agents are automatically paused via `checkBalanceAndPauseIfNeeded()`.
+
+---
+
 ## Known Limitations (MVP)
 
 1. **Shared Twilio Number**: All tenants share one SMS number
 2. **No WordPress Yet**: Funnels/landing pages are Phase 2
 3. **Manual SES Setup**: Each tenant needs SES credentials manually configured
-4. **No Usage Metering**: Billing integration is future phase
+4. **LiveKit Cloud Required**: Self-hosting requires additional setup

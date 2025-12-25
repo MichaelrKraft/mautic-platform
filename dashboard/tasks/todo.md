@@ -1,156 +1,111 @@
-# Course Player Implementation - Week 2 Day 10-11
+# LiveKit Voice AI Integration - Implementation Complete
 
-## Session Date: 2025-12-13
-
----
-
-## Updated Analysis (After Additional Context)
-
-### Key Discoveries from Codebase Review:
-
-**Already Implemented (Better than expected!):**
-- [x] `CoursePlayer.tsx` - Full video.js integration with 5-second progress saving
-- [x] `CourseSidebar.tsx` - Module/lesson navigation with expand/collapse  
-- [x] `ProgressTracker.tsx` - Progress display component
-- [x] Enrollment API (`/api/courses/[id]/enroll/route.ts`) - Creates enrollment, awards 10 points
-- [x] Progress API (`/api/lessons/[id]/progress/route.ts`) - 90% threshold, awards points
-- [x] video.js already installed in package.json
-
-**What's Actually Missing:**
-1. **Learn page** (`/community/[slug]/courses/[id]/learn/page.tsx`) - Main orchestration page
-2. **Course detail enrollment fix** - Replace placeholder with actual API call
-3. **Enrollment check API** (`/api/courses/[id]/enrollment/route.ts`) - Check if user enrolled
-4. **Working video URLs in seed data** - Current placeholders won't play
+**Date:** December 22, 2025
+**Status:** Day 1 Implementation Complete
 
 ---
 
-## Implementation Plan
+## Completed Tasks
 
-### Task 1: Create Enrollment Check API
-**File:** `/src/app/api/courses/[id]/enrollment/route.ts`
+### Python Voice Agent (`/voice-agent/`)
+- [x] Create voice-agent Python project structure
+- [x] Create `pyproject.toml` with dependencies
+- [x] Create main `agent.py` with PloinkVoiceAssistant class
+  - `book_appointment()` - Google Calendar integration
+  - `save_contact()` - Mautic CRM integration
+  - `send_text_message()` - Twilio SMS integration
+  - `qualify_lead()` - Lead qualification with CRM tagging
+  - `get_current_datetime()` - Utility function
+- [x] Create `.env.example` template file
+- [x] Create `README.md` with setup instructions
 
-Purpose: Check if user is enrolled before allowing access to learn page
-- [ ] GET endpoint returns enrollment if exists, 404 if not
-- [ ] Include lesson progress in response
+### Database Schema (`/prisma/schema.prisma`)
+- [x] Add `VoiceAgent` model
+- [x] Add `VoiceCall` model  
+- [x] Add `VoiceTranscript` model
+- [x] Update `User` model with `voiceAgents` relation
 
-### Task 2: Update Seed Data with Working Videos
-**File:** `/prisma/seed.ts`
+### Dashboard Backend (`/src/lib/` and `/src/app/api/`)
+- [x] Create `livekit-client.ts` - LiveKit SDK wrapper
+- [x] Create `/api/voice/agents/route.ts` - Agents CRUD
+- [x] Create `/api/voice/calls/route.ts` - Calls list & initiate
+- [x] Create `/api/voice/webhook/route.ts` - LiveKit event handler
 
-- [ ] Replace placeholder URLs with real sample videos:
-  - `https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4`
-  - `https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4`
-
-### Task 3: Create Course Learn Page  
-**File:** `/src/app/community/[slug]/courses/[id]/learn/page.tsx`
-
-Features:
-- [ ] Check enrollment on load, redirect if not enrolled
-- [ ] Layout: Sidebar (25%) + Main content (75%) with mobile responsiveness
-- [ ] URL query parameter for lesson selection (`?lesson=xxx`)
-- [ ] Fetch course data with modules and lessons
-- [ ] Track current lesson state
-- [ ] Pass lesson progress to CourseSidebar for checkmarks
-- [ ] Auto-select first lesson if none specified
-- [ ] Handle lesson navigation
-- [ ] Use hardcoded demo userId (with clear production upgrade comments)
-
-### Task 4: Fix Course Detail Page Enrollment
-**File:** `/src/app/community/[slug]/courses/[id]/page.tsx`
-
-Changes:
-- [ ] Replace placeholder `handleEnroll` with actual API call
-- [ ] Use hardcoded demo userId for MVP
-- [ ] Redirect to learn page on success
-- [ ] Handle "already enrolled" case gracefully
-
-### Task 5: Test Complete Flow
-- [ ] Verify enrollment creates database record
-- [ ] Verify learn page loads with first lesson
-- [ ] Verify video plays correctly (with real sample video)
-- [ ] Verify progress saves to database
-- [ ] Verify 90% completion marks lesson done
-- [ ] Verify sidebar shows completion checkmarks
-- [ ] Verify overall course progress updates
-- [ ] Test mobile responsive layout
+### Dashboard Frontend (`/src/components/voice-ai/` and `/src/app/voice-ai/`)
+- [x] Create `VoiceAnalytics.tsx` - Stats dashboard
+- [x] Create `VoiceAgentList.tsx` - Agent list with actions
+- [x] Create `CallLogTable.tsx` - Call history table
+- [x] Create `/voice-ai/page.tsx` - Main dashboard page
+- [x] Update `Sidebar.tsx` - Add Voice AI navigation
 
 ---
 
-## Technical Decisions
+## Files Created
 
-### 1. Authentication Approach (MVP)
-Using hardcoded demo user for testing:
-```typescript
-// TODO: Replace with NextAuth.js session in production
-// const session = await getServerSession();
-// const userId = session?.user?.id;
-const DEMO_USER_ID = 'demo-user-001';
-```
+### Python Agent
+1. `voice-agent/pyproject.toml`
+2. `voice-agent/src/__init__.py`
+3. `voice-agent/src/agent.py`
+4. `voice-agent/.env.example`
+5. `voice-agent/README.md`
 
-### 2. Lesson Selection via Query Params
-```typescript
-const searchParams = useSearchParams();
-const lessonId = searchParams.get('lesson');
-const currentLessonId = lessonId || course.modules[0]?.lessons[0]?.id;
-```
+### Dashboard Backend
+6. `src/lib/livekit-client.ts`
+7. `src/app/api/voice/agents/route.ts`
+8. `src/app/api/voice/calls/route.ts`
+9. `src/app/api/voice/webhook/route.ts`
 
-### 3. Mobile Responsive Layout
-```tsx
-<div className="flex flex-col lg:flex-row h-screen">
-  <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r">
-    <CourseSidebar />
-  </div>
-  <div className="flex-1 overflow-auto">
-    <CoursePlayer />
-  </div>
-</div>
-```
+### Dashboard Frontend
+10. `src/components/voice-ai/VoiceAnalytics.tsx`
+11. `src/components/voice-ai/VoiceAgentList.tsx`
+12. `src/components/voice-ai/CallLogTable.tsx`
+13. `src/components/voice-ai/index.ts`
+14. `src/app/voice-ai/page.tsx`
 
-### 4. Edge Case: Division by Zero
-```typescript
-const calculateProgress = (totalLessons: number, completed: number) => {
-  if (totalLessons === 0) return 0;
-  return Math.round((completed / totalLessons) * 100);
-};
-```
+### Modified Files
+15. `prisma/schema.prisma` - Added voice models
+16. `src/components/Sidebar.tsx` - Added Voice AI nav
 
 ---
 
-## Files to Create/Modify
+## Next Steps (Manual)
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `/src/app/api/courses/[id]/enrollment/route.ts` | CREATE | Check enrollment status |
-| `/src/app/community/[slug]/courses/[id]/learn/page.tsx` | CREATE | Main course player page |
-| `/src/app/community/[slug]/courses/[id]/page.tsx` | MODIFY | Fix enrollment handler |
-| `/prisma/seed.ts` | MODIFY | Add working video URLs |
+### Required Before Testing
+1. **Create LiveKit Cloud account**: https://cloud.livekit.io
+2. **Install LiveKit CLI**: `brew install livekit-cli`
+3. **Authenticate**: `lk cloud auth`
+4. **Run Prisma migration**: `npx prisma migrate dev --name add_voice_ai_models`
+5. **Install LiveKit SDK**: `npm install livekit-server-sdk`
+6. **Add environment variables** to `.env.local`:
+   ```
+   LIVEKIT_URL=wss://your-project.livekit.cloud
+   LIVEKIT_API_KEY=your-api-key
+   LIVEKIT_API_SECRET=your-api-secret
+   ```
 
-## Existing Files to Reference (Don't Modify):
-- `/src/components/courses/CoursePlayer.tsx` - Video player component
-- `/src/components/courses/CourseSidebar.tsx` - Sidebar navigation
-- `/src/components/courses/ProgressTracker.tsx` - Progress bar
-- `/src/app/api/courses/[id]/enroll/route.ts` - Enrollment API
-- `/src/app/api/lessons/[id]/progress/route.ts` - Progress API
-
----
-
-## Success Criteria
-
-When complete:
-1. ✅ User can click "Enroll Now" on course detail page
-2. ✅ Enrollment redirects to learn page with first lesson
-3. ✅ Video plays with real sample video
-4. ✅ Progress saves automatically every 5 seconds
-5. ✅ Resuming course loads from last position
-6. ✅ 90% watched marks lesson complete
-7. ✅ Sidebar navigation shows all modules/lessons
-8. ✅ Sidebar shows completion checkmarks
-9. ✅ Clicking different lesson loads that lesson via URL
-10. ✅ Overall progress percentage updates
-11. ✅ Mobile responsive layout works
-12. ✅ Non-enrolled users redirected to course detail page
+### For Phone Calls
+7. **Set up Twilio account** and purchase a phone number
+8. **Configure SIP trunk** in LiveKit Cloud dashboard
+9. **Set up Google Calendar API** (optional, for appointment booking)
 
 ---
 
-## Review Section
-*(To be filled after implementation)*
+## Review
 
+### What Was Implemented
+- Full Python voice agent with 4 action tools
+- Database models for agents, calls, and transcripts
+- REST API endpoints for CRUD operations
+- LiveKit webhook handler for call events
+- Frontend dashboard with analytics, agent list, and call log
+- Sidebar navigation integration
+
+### Architecture Decisions
+- Used LiveKit Cloud (not self-hosted) for simpler setup
+- Lazy initialization for Google Calendar and Mautic APIs
+- Graceful fallbacks when services aren't configured
+- Webhook-based call tracking for real-time updates
+
+### Cost Estimate
+- LiveKit Cloud free tier: 1,000 min/month
+- Estimated total: ~$0.03-0.04/min when configured

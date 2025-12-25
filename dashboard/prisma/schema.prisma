@@ -29,6 +29,7 @@ model User {
   reactions         Reaction[]
   achievements      UserAchievement[]
   voiceAgents       VoiceAgent[]
+  wallet            Wallet?
 
   @@index([email])
   @@map("users")
@@ -379,6 +380,7 @@ model VoiceCall {
   agent       VoiceAgent       @relation(fields: [agentId], references: [id], onDelete: Cascade)
   contactId   String?          // Mautic contact ID if synced
   transcript  VoiceTranscript?
+  usage       VoiceUsage?      // Billing usage record
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
@@ -399,4 +401,61 @@ model VoiceTranscript {
 
   @@index([callId])
   @@map("voice_transcripts")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Voice AI Billing Models
+// ═══════════════════════════════════════════════════════════════════════════
+
+model Wallet {
+  id           String               @id @default(cuid())
+  userId       String               @unique
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance      Float                @default(0) // Balance in dollars
+  lowBalanceAt Float                @default(5) // Alert when balance falls below this
+  autoTopUp    Boolean              @default(false)
+  autoTopUpAmt Float?               // Amount to auto-charge when low
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  transactions BillingTransaction[]
+
+  @@index([userId])
+  @@map("wallets")
+}
+
+model VoiceUsage {
+  id        String    @id @default(cuid())
+  userId    String
+  callId    String    @unique
+  call      VoiceCall @relation(fields: [callId], references: [id], onDelete: Cascade)
+  minutes   Float     // Duration in minutes
+  costRate  Float     @default(0.10) // Cost per minute charged to user
+  totalCost Float     // minutes * costRate
+  baseCost  Float     // Actual cost to platform (~$0.04/min)
+  margin    Float     // totalCost - baseCost (profit)
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([callId])
+  @@index([createdAt])
+  @@map("voice_usage")
+}
+
+model BillingTransaction {
+  id              String   @id @default(cuid())
+  walletId        String
+  wallet          Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  type            String   // "top_up", "usage_deduction", "refund", "bonus"
+  amount          Float    // Positive for credits, negative for debits
+  balanceAfter    Float    // Wallet balance after this transaction
+  description     String?
+  stripePaymentId String?  // Stripe payment intent ID for top-ups
+  callId          String?  // Reference to VoiceCall for usage deductions
+  createdAt       DateTime @default(now())
+
+  @@index([walletId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([stripePaymentId])
+  @@map("billing_transactions")
 }

@@ -121,3 +121,19 @@ body {
 .badge-info {
   @apply px-2 py-1 rounded-full text-xs font-medium bg-mautic-blue-light/20 text-mautic-blue-light;
 }
+
+/* Fade in animation for modals */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out forwards;
+}

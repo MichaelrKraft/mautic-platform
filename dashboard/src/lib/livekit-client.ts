@@ -52,7 +52,7 @@ export function getWebhookReceiver(): WebhookReceiver {
 /**
  * Create an access token for a voice agent to join a room
  */
-export function createAgentToken(roomName: string, agentId: string): string {
+export async function createAgentToken(roomName: string, agentId: string): Promise<string> {
   if (!validateConfig()) {
     throw new Error('LiveKit not configured');
   }
@@ -70,13 +70,13 @@ export function createAgentToken(roomName: string, agentId: string): string {
     canPublishData: true,
   });
 
-  return token.toJwt();
+  return await token.toJwt();
 }
 
 /**
  * Create an access token for a user to join a room (for monitoring/testing)
  */
-export function createUserToken(roomName: string, userId: string, userName: string): string {
+export async function createUserToken(roomName: string, userId: string, userName: string): Promise<string> {
   if (!validateConfig()) {
     throw new Error('LiveKit not configured');
   }
@@ -93,7 +93,7 @@ export function createUserToken(roomName: string, userId: string, userName: stri
     canSubscribe: true,
   });
 
-  return token.toJwt();
+  return await token.toJwt();
 }
 
 /**
